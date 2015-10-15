@@ -71,7 +71,7 @@ L.PageComposer = L.Class.extend({
       this.refs.paperSize = x;
       this.refs.page_aspect_ratio = this.refs.paper_aspect_ratios[this.refs.paperSize][this.refs.pageOrientation];
 
-      this._updateToolDimensions();
+      this._updateToolDimensions('setPaperSize');
 
       // if the new size is outside the map bounds, contain it.
       var mapBds = this.map.getBounds();
@@ -90,7 +90,7 @@ L.PageComposer = L.Class.extend({
         this.refs.pageOrientation = x;
         this.refs.page_aspect_ratio = this.refs.paper_aspect_ratios[this.refs.paperSize][x];
 
-        this._updateToolDimensions();
+        this._updateToolDimensions('setOrientation');
 
         // if the flop is outside the map bounds, contain it.
         var mapBds = this.map.getBounds();
@@ -375,32 +375,32 @@ L.PageComposer = L.Class.extend({
     _onAddRow: function(evt) {
       evt.stopPropagation();
       this.refs.rows++;
-      this._updatePages();
+      this._updatePages('addRow');
     },
 
     _onSubtractRow: function(evt) {
       evt.stopPropagation();
       if (this.refs.rows === 1) return;
       this.refs.rows--;
-      this._updatePages();
+      this._updatePages('subRow');
     },
 
     _onAddCol: function(evt) {
       evt.stopPropagation();
       this.refs.cols++;
-      this._updatePages();
+      this._updatePages('addCol');
     },
 
     _onSubtractCol: function(evt) {
       evt.stopPropagation();
       if (this.refs.cols === 1) return;
       this.refs.cols--;
-      this._updatePages();
+      this._updatePages('subCol');
     },
 
-    _updatePages: function() {
+    _updatePages: function(action) {
       // this._setDimensions();
-      this._updateToolDimensions();
+      this._updateToolDimensions(action);
       this._createPages();
 
       this.fire("change");
@@ -426,15 +426,30 @@ L.PageComposer = L.Class.extend({
       this.bounds = this.getBounds();
     },
 
-    _updateToolDimensions: function() {
-      var scale = this.refs.paper_aspect_ratios[this.refs.paperSize].scale;
-      if (this.refs.pageOrientation === 'portrait') {
-        this.dimensions.width = (this.options.pageHeight * this.refs.toolScale * this.refs.zoomScale * scale) * this.refs.cols;
-        this.dimensions.height = ((this.options.pageHeight / this.refs.page_aspect_ratio) * this.refs.toolScale * this.refs.zoomScale * scale) * this.refs.rows;
-      } else {
-        this.dimensions.width = ((this.options.pageHeight * this.refs.page_aspect_ratio) * this.refs.toolScale * this.refs.zoomScale * scale) * this.refs.cols;
-        this.dimensions.height = (this.options.pageHeight * this.refs.toolScale * this.refs.zoomScale * scale) * this.refs.rows;
+    _updateToolDimensions: function(action) {
+      if (action === 'setOrientation') {
+        this.dimensions.height = this.dimensions.cellWidth * this.refs.rows;
+        this.dimensions.width = this.dimensions.cellHeight * this.refs.cols;
       }
+
+      if (action === 'setPaperSize') {
+        var scale = this.refs.paper_aspect_ratios[this.refs.paperSize].scale;
+        if (this.refs.pageOrientation === 'portrait') {
+          this.dimensions.width = (this.options.pageHeight * this.refs.toolScale * this.refs.zoomScale * scale) * this.refs.cols;
+          this.dimensions.height = ((this.options.pageHeight / this.refs.page_aspect_ratio) * this.refs.toolScale * this.refs.zoomScale * scale) * this.refs.rows;
+        } else {
+          this.dimensions.width = ((this.options.pageHeight * this.refs.page_aspect_ratio) * this.refs.toolScale * this.refs.zoomScale * scale) * this.refs.cols;
+          this.dimensions.height = (this.options.pageHeight * this.refs.toolScale * this.refs.zoomScale * scale) * this.refs.rows;
+        }
+      }
+
+      if (action === 'addRow') this.dimensions.height = (this.dimensions.height / (this.refs.rows - 1)) + this.dimensions.height;
+
+      if (action === 'subRow') this.dimensions.height = this.dimensions.height - (this.dimensions.height / (this.refs.rows + 1));
+
+      if (action === 'addCol') this.dimensions.width = (this.dimensions.width / (this.refs.cols - 1)) + this.dimensions.width;
+
+      if (action === 'subCol') this.dimensions.width = this.dimensions.width - (this.dimensions.width / (this.refs.cols + 1));
 
       // re-calc bounds
       this.bounds = this._getBoundsPinToNorthWest();
