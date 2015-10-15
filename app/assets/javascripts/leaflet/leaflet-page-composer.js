@@ -399,7 +399,7 @@ L.PageComposer = L.Class.extend({
     },
 
     _updatePages: function() {
-      this._setDimensions();
+      // this._setDimensions();
       this._updateToolDimensions();
       this._createPages();
 
