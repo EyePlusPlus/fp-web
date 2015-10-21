@@ -8,6 +8,7 @@ L.PageComposer = L.Class.extend({
         minHeight: 80,
         paddingToEdge: 30,
         keepAspectRatio: true,
+        keepAtlasExtentConstant: false,
     },
 
     offset: new L.Point(0,0),
@@ -135,6 +136,7 @@ L.PageComposer = L.Class.extend({
 
     _onMapReset: function() {
       this.refs.zoomScale = 1 / this.map.getZoomScale(this.refs.startZoom);
+      this.options.keepAtlasExtentConstant = true;
       this._render();
       this.fire("change");
     },
@@ -491,55 +493,62 @@ L.PageComposer = L.Class.extend({
         this._calculateInitialPositions();
       }
 
-      this._setDimensions();
+      if (this.options.keepAtlasExtentConstant) {
+        var nwPos = this.dimensions.nw;
+        this._updateNWPosition(nwPos);
+        this.options.keepAtlasExtentConstant = false;
+      } else {
+        this._setDimensions();
 
-      var nw = this.dimensions.nw,
-          ne = this.dimensions.ne,
-          sw = this.dimensions.sw,
-          se = this.dimensions.se,
-          width = this.dimensions.width,
-          height = this.dimensions.height,
-          rightWidth = size.x - width - nw.x,
-          bottomHeight = size.y - height - nw.y;
+        var nw = this.dimensions.nw,
+            ne = this.dimensions.ne,
+            sw = this.dimensions.sw,
+            se = this.dimensions.se,
+            width = this.dimensions.width,
+            height = this.dimensions.height,
+            rightWidth = size.x - width - nw.x,
+            bottomHeight = size.y - height - nw.y;
 
-      // position page grid
-      this._updatePageGridPosition(nw.x, nw.y, width, height);
+        // position page grid
+        this._updatePageGridPosition(nw.x, nw.y, width, height);
 
-      // position shades
-      this._updateGridElement(this._topShade, {
-        width:size.x,
-        height:nw.y > 0 ? nw.y : 0,
-        top:0,
-        left:0
-      });
+        // position shades
+        this._updateGridElement(this._topShade, {
+          width:size.x,
+          height:nw.y > 0 ? nw.y : 0,
+          top:0,
+          left:0
+        });
 
-      this._updateGridElement(this._bottomShade, {
-        width:size.x,
-        height: bottomHeight > 0 ? bottomHeight : 0,
-        bottom:0,
-        left:0
-      });
+        this._updateGridElement(this._bottomShade, {
+          width:size.x,
+          height: bottomHeight > 0 ? bottomHeight : 0,
+          bottom:0,
+          left:0
+        });
 
-      this._updateGridElement(this._leftShade, {
-          width: nw.x > 0 ? nw.x : 0,
-          height: height,
-          top: nw.y,
-          left: 0
-      });
+        this._updateGridElement(this._leftShade, {
+            width: nw.x > 0 ? nw.x : 0,
+            height: height,
+            top: nw.y,
+            left: 0
+        });
 
-      this._updateGridElement(this._rightShade, {
-          width: rightWidth > 0 ? rightWidth : 0,
-          height: height,
-          top: nw.y,
-          right: 0
-      });
+        this._updateGridElement(this._rightShade, {
+            width: rightWidth > 0 ? rightWidth : 0,
+            height: height,
+            top: nw.y,
+            right: 0
+        });
 
-      // position handles
-      this._updateGridElement(this._dragHandle, {left:nw.x, top:nw.y });
-      this._updateGridElement(this._scaleHandle, {left:nw.x + width, top:nw.y + height});
+        // position handles
+        this._updateGridElement(this._dragHandle, {left:nw.x, top:nw.y });
+        this._updateGridElement(this._scaleHandle, {left:nw.x + width, top:nw.y + height});
 
-      this._updateGridElement(this._rowModifier, {left:nw.x + (width / 2), top:nw.y + height});
-      this._updateGridElement(this._colModifier, {left:nw.x + width, top:nw.y + (height/2)});
+        this._updateGridElement(this._rowModifier, {left:nw.x + (width / 2), top:nw.y + height});
+        this._updateGridElement(this._colModifier, {left:nw.x + width, top:nw.y + (height/2)});
+      }
+
     }
 });
 
